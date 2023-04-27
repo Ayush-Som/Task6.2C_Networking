@@ -5,29 +5,28 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind(('localhost', 5354))
 
 # Define a dictionary of hostname-IP address mappings
-hosts = {'example.com': '192.168.1.1', 'www.example.com': '192.168.1.1', 'mail.example.com': '192.168.1.2',
-         'ftp.example.com': '192.168.1.3'}
+hosts = {'ayush.com': '192.168.1.1', 'www.ayush.com': '192.168.1.4', 'mail.ayush.com': '192.168.1.2',
+         'ftp.ayush.com': '192.168.1.3'}
+
+cname = {'ayush.com': 'host.google.com', 'www.ayush.com': 'host.spotify.com', 'mail.ayush.com': 'host.facebook.com',
+         'ftp.ayush.com': 'host.images.com'}
 
 print('DNS server listening on port 5354...')
 
 while True:
-    # Receive a message from a client
-    data, address = sock.recvfrom(1024)
+    # Receive the data sent by the client and the address of the client
+    client_request, client_address = sock.recvfrom(2048)
 
-    # Extract the query from the message
-    query = data[12:].decode('utf-8').strip('\x00')
+    # Decode the data received from the client to get the domain name for which the IP address is requested
+    client_request = client_request.decode()
 
-    # Check if the query is a valid hostname
-    if query in hosts:
-        # Construct a response message with the IP address of the hostname
-        response = bytearray(data[:2]) + bytearray(b'\x81\x80') + bytearray(data[4:6]) + bytearray(
-            b'\x00\x01\x00\x01\x00\x00\x00\x00') + data[12:] + bytearray(
-            b'\x00\x01\x00\x01\xc0\x0c\x00\x01\x00\x01\x00\x00\x00\x3c\x00\x04') + socket.inet_aton(hosts[query])
-    else:
-        # Construct a response message with a CNAME record pointing to a valid hostname
-        response = bytearray(data[:2]) + bytearray(b'\x81\x80') + bytearray(data[4:6]) + bytearray(
-            b'\x00\x01\x00\x01\x00\x00\x00\x00') + data[12:] + bytearray(
-            b'\x00\x05\x00\x01\xc0\x0c\x00\x05\x00\x01\x00\x00\x00\x3c\x00\x0c\x03\x77\x77\x77\xc0\x0c')
+    # Search for the IP address of the requested domain name in the dictionary
+    sample_ip = hosts.get(
+        client_request, "No website with this name available").encode()
 
-    # Send the response message to the client
-    sock.sendto(response, address)
+    sample_cname = cname.get(
+        client_request, "No website with this name available").encode()
+
+    # Send the IP address of the requested domain name to the client
+    sock.sendto(sample_ip, client_address)
+    sock.sendto(sample_cname, client_address)
