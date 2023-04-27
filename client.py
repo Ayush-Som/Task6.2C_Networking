@@ -12,21 +12,21 @@ while True:
     # Prompt the user to enter a hostname
     hostname = input('Enter a hostname: ')
 
-    # Construct a DNS query message
-    query = bytearray(b'\x00\x01\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00') + bytearray(
-        hostname.encode('utf-8')) + bytearray(b'\x00\x00\x01\x00\x01')
+    # Send the website name to the server
+    data_send = sock.sendto(hostname.encode(), ('localhost', 5354))
 
-    # Send the DNS query message to the server
-    sock.sendto(query, server_address)
+    # Receive the IP address of the requested website from the server
+    ip_address, address = sock.recvfrom(2048)
+    cname, address = sock.recvfrom(2048)
 
-    # Receive the server's response message
-    response, address = sock.recvfrom(1024)
-
-    # Extract the IP address from the response message
-    ip_address = socket.inet_ntoa(response[-4:])
+    # Decode the received data to get the IP address as a string
+    server_rec = ip_address.decode()
+    cname_rec = cname.decode()
 
     # Display the IP address to the user
     print('The IP address of', hostname, 'is', ip_address)
+    print(f"The CNAME for the required host is : {cname_rec}")
+    print('')
 
     # Prompt the user to continue or exit
     choice = input('Do you want to perform another DNS query? (y/n): ')
